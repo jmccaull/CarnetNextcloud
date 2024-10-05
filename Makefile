@@ -115,7 +115,7 @@ dist:
 source:
 	rm -rf $(source_build_directory)
 	mkdir -p $(source_build_directory)
-	tar --ignore-failed-read cvzf $(source_package_name).tar.gz ../$(app_name)
+	tar --ignore-failed-read -cvzf $(source_package_name).tar.gz ../$(app_name)
 
 
 # Builds the source package for the app store, ignores php and js tests
