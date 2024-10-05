@@ -16,7 +16,7 @@ if ((@include_once __DIR__ . '/../vendor/autoload.php')===false) {
 class Application extends App {
 
     public function __construct(array $urlParams=array()){
-        parent::__construct('carnet_test', $urlParams);
+        parent::__construct('carnet', $urlParams);
         $container = $this->getContainer();
         $container->registerService('Config', function($c) {
 
@@ -39,7 +39,7 @@ class Application extends App {
                 $c = $container->query('ServerContainer'); 
                 $user = $c->getUserSession()->getUser();
                 if($user != null){
-                    $watcher = new FSHooks($c->getUserFolder(), $user->getUID(), $c->getConfig(), 'carnet_test',$container->query(IDBConnection::class));
+                    $watcher = new FSHooks($c->getUserFolder(), $user->getUID(), $c->getConfig(), 'carnet',$container->query(IDBConnection::class));
                     $watcher->postWrite($node);
                  }
             });
