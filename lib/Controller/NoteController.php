@@ -14,7 +14,9 @@
  use OCP\IDBConnection;
  use OCP\IURLGenerator;
  use OCA\Carnet\Misc\Search;
- require_once 'carnet/vendor/autoload.php';
+use Psr\Log\LoggerInterface;
+
+require_once 'carnet/vendor/autoload.php';
  function endsWith($string, $endString) 
  { 
      $len = strlen($endString); 
@@ -47,7 +49,9 @@
     private $urlGenerator;
     public static $lastWrite = null;
     private $appManager;
-    public function __construct($AppName, IRequest $request, IAppManager $AppManager, $UserId, $RootFolder, $Config,  IDBConnection $IDBConnection, IURLGenerator $urlGenerator){
+    private LoggerInterface $logger;
+    public function __construct($AppName, IRequest $request, IAppManager $AppManager, $UserId, $RootFolder, $Config,
+                                IDBConnection $IDBConnection, IURLGenerator $urlGenerator, LoggerInterface $logger){
         parent::__construct($AppName, $request);
         $this->userId = $UserId;
         $this->appManager = $AppManager;
@@ -68,6 +72,7 @@
             shell_exec('php occ carnet:cache rebuild > /dev/null 2>/dev/null &');
             $this->Config->setSystemValue('has_rebuilt_cache', true);
         }
+        $this -> logger = $logger;
        // \OC_Util::tearDownFS();
        // \OC_Util::setupFS($UserId);
 	}
@@ -560,8 +565,7 @@ public function getOpusEncoder(){
       * @NoCSRFRequired
       */
 	 public function updateMetadata($path, $metadata){
-
-
+        $this->logger->debug('Update metadata: ' . json_encode($metadata));
         if(NoteUtils::isFolderNote($path, $this->CarnetFolder)){
             try{
                 $noteNode = $this->CarnetFolder->get($path);
@@ -576,20 +580,20 @@ public function getOpusEncoder(){
             if(!file_put_contents($tmppath, $this->CarnetFolder->get($path)->fopen("r")))
                     return;
 
-                $zipFile = new \PhpZip\ZipFile();
-                $zipFile->openFromStream(fopen($tmppath, "r")); //issue with encryption when open directly + unexpectedly faster to copy before Oo'
-                $zipFile->addFromString("metadata.json", $metadata, null);
-                $zipFile->saveAsFile($tmppath2);
-                $tmph = fopen($tmppath2, "r");
-                if($tmph){
-                    try{
-                        $file = $this->CarnetFolder->get($path);
-                        $file->putContent($tmph);   
-                    } catch(\OCP\Files\NotFoundException $e) {
-                    }
-                    fclose($tmph);
-                } else 
-                    throw new Exception('Unable to create Zip');
+            $zipFile = new \PhpZip\ZipFile();
+            $zipFile->openFromStream(fopen($tmppath, "r")); //issue with encryption when open directly + unexpectedly faster to copy before Oo'
+            $zipFile->addFromString("metadata.json", $metadata, null);
+            $zipFile->saveAsFile($tmppath2);
+            $tmph = fopen($tmppath2, "r");
+            if($tmph){
+                try{
+                    $file = $this->CarnetFolder->get($path);
+                    $file->putContent($tmph);
+                } catch(\OCP\Files\NotFoundException $e) {
+                }
+                fclose($tmph);
+            } else
+                throw new Exception('Unable to create Zip');
             unlink($tmppath);	
             unlink($tmppath2);
         }
@@ -633,6 +637,7 @@ public function getOpusEncoder(){
         $array = array();
         $cache = new CacheManager($this->db, $this->CarnetFolder);
         $metadataFromCache = $cache->getFromCache($paths);
+        $this->logger->debug('getMetadata metadataFromCache: ' . json_encode($metadataFromCache));
 		foreach($paths as $path){
 
 			if(empty($path))
@@ -655,6 +660,7 @@ public function getOpusEncoder(){
            
         }
         $array = array_merge($metadataFromCache, $array);
+        $this->logger->debug('getMetadata result: ' . json_encode($array));
 		return $array;
      }
 
@@ -736,6 +742,7 @@ public function getOpusEncoder(){
      * @NoCSRFRequired
      */
      public function saveTextToOpenNote(){
+         $this->logger->debug('saveTextToOpenNote');
         $id = $_POST['id'];
         $this->waitEndOfExtraction($id);
         $cache = $this->getCacheFolder();
@@ -804,6 +811,7 @@ public function getOpusEncoder(){
      }
 
      private function saveOpenNoteAsDir($inFolder, $files, $path, $id){
+         $this->logger->debug("saveOpenNoteAdDir: {$inFolder}, {$files}, {$path}, {$id}");
          if($this->CarnetFolder->nodeExists($path)){
             $outFolder = $this->CarnetFolder->get($path);
          } 
@@ -1058,6 +1066,7 @@ public function getOpusEncoder(){
      }
 
      private function saveOpenNote($path,$id){
+         $this->logger->debug("saveOpenNode: {$path}, {$id}");
         $this->waitEndOfExtraction($id);
         $cache = $this->getCacheFolder();
         $folder = $cache->get("currentnote".$id);
@@ -1081,8 +1090,10 @@ public function getOpusEncoder(){
         if($tmph){
             if($this->CarnetFolder->nodeExists($path)){
                 try{
-                    $this->CarnetFolder->get($path)->delete();
-
+                    $oldFile = $this->CarnetFolder->get($path);
+                    $oldFileJson = json_encode($oldFile);
+                    $this->logger->debug("oldFileJson: {$oldFileJson}");
+                    $oldFile->delete();
                 } catch(\OCP\Files\NotFoundException $e) {
                 }
             }
@@ -1090,6 +1101,10 @@ public function getOpusEncoder(){
             $file = $this->CarnetFolder->newFile($path);
 
             $file->putContent($tmph);
+            $newFileJson = json_encode($oldFile);
+            $this->logger->debug("newFileJson: {$newFileJson}");
+            //I think this new file is missing the share info
+
             // Do not close $tmph, it is closed by putContent, and a log is displayed as
             // fclose can not work
             //fclose($tmph);

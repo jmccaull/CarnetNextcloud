@@ -10,5 +10,8 @@
     ],
     "require": {
         "nelexa/zip": "^4.0.1"
+    },
+    "require-dev": {
+        "nextcloud/ocp": "v30.0.0"
     }
 }
