@@ -14,26 +14,25 @@
  use OCP\IDBConnection;
  use OCP\IURLGenerator;
  use OCA\Carnet\Misc\Search;
-use Psr\Log\LoggerInterface;
 
 require_once 'carnet/vendor/autoload.php';
- function endsWith($string, $endString) 
- { 
-     $len = strlen($endString); 
-     if ($len == 0) { 
-         return true; 
-     } 
-     return (substr($string, -$len) === $endString); 
+ function endsWith($string, $endString)
+ {
+     $len = strlen($endString);
+     if ($len == 0) {
+         return true;
+     }
+     return (substr($string, -$len) === $endString);
  }
 
- function startsWith($string, $startString) 
- { 
-     $len = strlen($startString); 
-     if ($len == 0) { 
-         return true; 
-     } 
-     return (substr($string, 0, $len) === $startString); 
- } 
+ function startsWith($string, $startString)
+ {
+     $len = strlen($startString);
+     if ($len == 0) {
+         return true;
+     }
+     return (substr($string, 0, $len) === $startString);
+ }
  class MyZipFile extends \PhpZip\ZipFile {
      public function getInputStream(){
         return $this->inputStream;
@@ -49,9 +48,8 @@ require_once 'carnet/vendor/autoload.php';
     private $urlGenerator;
     public static $lastWrite = null;
     private $appManager;
-    private LoggerInterface $logger;
     public function __construct($AppName, IRequest $request, IAppManager $AppManager, $UserId, $RootFolder, $Config,
-                                IDBConnection $IDBConnection, IURLGenerator $urlGenerator, LoggerInterface $logger){
+                                IDBConnection $IDBConnection, IURLGenerator $urlGenerator) {
         parent::__construct($AppName, $request);
         $this->userId = $UserId;
         $this->appManager = $AppManager;
@@ -72,7 +70,6 @@ require_once 'carnet/vendor/autoload.php';
             shell_exec('php occ carnet:cache rebuild > /dev/null 2>/dev/null &');
             $this->Config->setSystemValue('has_rebuilt_cache', true);
         }
-        $this -> logger = $logger;
        // \OC_Util::tearDownFS();
        // \OC_Util::setupFS($UserId);
 	}
@@ -99,7 +96,7 @@ require_once 'carnet/vendor/autoload.php';
         $paths = array();
         $data = array();
         foreach($this->CarnetFolder->get($path)->getDirectoryListing() as $in){
-        
+
             $inf = $in->getFileInfo();
             $file = array();
             $file['name'] = $inf->getName();
@@ -111,7 +108,7 @@ require_once 'carnet/vendor/autoload.php';
             }
             array_push($data,$file);
         }
-        
+
         $return = array();
         if(sizeof($paths)>0){
             $cache = new CacheManager($this->db, $this->CarnetFolder);
@@ -147,7 +144,7 @@ require_once 'carnet/vendor/autoload.php';
         $paths = array();
         if($recents['data'] == null)
             $recents['data'] = array();
-        if(isset($recents['metadata'])){ //fix an old bug 
+        if(isset($recents['metadata'])){ //fix an old bug
             unset($recents['metadata']);
             $this->internalSaveRecent(json_encode($recents));
         }
@@ -164,10 +161,10 @@ require_once 'carnet/vendor/autoload.php';
                 if(in_array($item['path'], $paths)){
                     array_splice($paths, array_search($item['path'], $paths), 1);
                 }
-            } 
+            }
             else if(!in_array($path, $paths))
                 array_push($paths, $path);
-            
+
         }
         $return = array();
         if(sizeof($paths)>0){
@@ -175,7 +172,7 @@ require_once 'carnet/vendor/autoload.php';
             $metadataFromCache = $cache->getFromCache($paths);
             $return['metadata'] = $metadataFromCache;
         }
- 
+
         $return['data'] = $recents['data'];
         return $return;
     }
@@ -248,7 +245,7 @@ require_once 'carnet/vendor/autoload.php';
     * @NoCSRFRequired
     */
    public function getChangelog() {
-       
+
     $changelog = file_get_contents(__DIR__."/../../CHANGELOG.md");
     $current = $this->appManager->getAppInfo($this->appName)['version'];
     $last = $this->Config->getUserValue($this->userId, $this->appName, "last_changelog_version");
@@ -265,12 +262,12 @@ require_once 'carnet/vendor/autoload.php';
     * @NoAdminRequired
     * @NoCSRFRequired
     */
-    public function getKeywordsDB() {  
+    public function getKeywordsDB() {
         if(!$this->CarnetFolder->nodeExists("quickdoc/keywords/keywordsnc"))
             $this->mergeKeywordsDB();
         return json_decode($this->getKeywordsDBFile()->getContent(),true);
     }
-    
+
    private function getKeywordsDBFile(){
        try {
            return $this->CarnetFolder->get("quickdoc/keywords/keywordsnc");
@@ -324,7 +321,7 @@ require_once 'carnet/vendor/autoload.php';
 	 * @PublicPage
 	 * @NoCSRFRequired
      * @NoAdminRequired
-   * 
+   *
 */
 public function getOpusEncoder(){
     echo"bla";
@@ -333,7 +330,7 @@ public function getOpusEncoder(){
   $response->addHeader("Content-Type", "application/wasm");
   return $response;
 }
-  
+
    /**
    * @NoAdminRequired
    * @NoCSRFRequired
@@ -368,7 +365,7 @@ public function getOpusEncoder(){
            if($actionMy == $action){
                $isIn = true;
                break;
-            }         
+            }
         }
         if(!$isIn){
            $hasChanged = true;
@@ -415,7 +412,7 @@ public function getOpusEncoder(){
           if(!$hasChanged){
             $hasChanged = $savedDB;
           }
-          
+
       }
       return $hasChanged;
   }
@@ -435,7 +432,7 @@ public function getOpusEncoder(){
         $thisDbContent = $otherRecentDBParsed;
         $saveDB = "";
         foreach($thisDbContent->data as $action){
-          
+
            $isIn = false;
            foreach($myDbContent->data as $actionMy){
                if($actionMy->time < 10000000000)
@@ -448,7 +445,7 @@ public function getOpusEncoder(){
                if($actionMy->time === $action->time && $actionMy->path === $action->path && $actionMy->action === $action->action){
                    $isIn = true;
                    break;
-                }         
+                }
             }
             if(!$isIn){
                 $saveDB = $saveDB." action: ".$action->action." time ".$action->time." ".$action->path." not in ";
@@ -482,7 +479,7 @@ public function getOpusEncoder(){
 	     $lastmod = -1;
 	 }
          if($lastmod != -1)
-            $lastmod = $myDb->getMTime(); 
+            $lastmod = $myDb->getMTime();
          $hasChanged = false;
          foreach($this->CarnetFolder->get("quickdoc/recentdb/")->getDirectoryListing() as $inDB){
              if($inDB->getName() === $myDb->getName()||$inDB->getMTime()<$lastmod){
@@ -557,7 +554,7 @@ public function getOpusEncoder(){
             $i++;
         }
         return $path.$name;
-        
+
      }
 
       /**
@@ -565,7 +562,6 @@ public function getOpusEncoder(){
       * @NoCSRFRequired
       */
 	 public function updateMetadata($path, $metadata){
-        $this->logger->debug('Update metadata: ' . json_encode($metadata));
         if(NoteUtils::isFolderNote($path, $this->CarnetFolder)){
             try{
                 $noteNode = $this->CarnetFolder->get($path);
@@ -594,7 +590,7 @@ public function getOpusEncoder(){
                 fclose($tmph);
             } else
                 throw new Exception('Unable to create Zip');
-            unlink($tmppath);	
+            unlink($tmppath);
             unlink($tmppath2);
         }
      }
@@ -622,7 +618,7 @@ public function getOpusEncoder(){
 
             } catch(\PhpZip\Exception\ZipNotFoundEntry $e){
                 $response = $media;
-                
+
             }
             unlink($tmppath);
         }
@@ -637,13 +633,12 @@ public function getOpusEncoder(){
         $array = array();
         $cache = new CacheManager($this->db, $this->CarnetFolder);
         $metadataFromCache = $cache->getFromCache($paths);
-        $this->logger->debug('getMetadata metadataFromCache: ' . json_encode($metadataFromCache));
 		foreach($paths as $path){
 
 			if(empty($path))
                 continue;
             try{
-                
+
                 if(!array_key_exists($this->CarnetFolder->getFullPath($path), $metadataFromCache)){
                     $utils = new NoteUtils();
                     try{
@@ -657,10 +652,9 @@ public function getOpusEncoder(){
 			} catch(\OCP\Files\NotFoundException $e) {
             } catch(\OCP\Encryption\Exceptions\GenericEncryptionException $e){
             }
-           
+
         }
         $array = array_merge($metadataFromCache, $array);
-        $this->logger->debug('getMetadata result: ' . json_encode($array));
 		return $array;
      }
 
@@ -686,8 +680,8 @@ public function getOpusEncoder(){
             if($c){
                 $return["files"] = $c;
             }
-               
-        } catch(\OCP\Files\NotFoundException $e) {  
+
+        } catch(\OCP\Files\NotFoundException $e) {
         } catch(\OCP\Lock\LockedException $e){
             sleep(2);
             $c = json_decode($this->getCacheFolder()->get("carnet_search")->getContent());
@@ -711,7 +705,7 @@ public function getOpusEncoder(){
       * @NoAdminRequired
       * @NoCSRFRequired
       */
-    public function moveNote($from, $to){     
+    public function moveNote($from, $to){
         if($this->CarnetFolder->nodeExists($to)){
             throw new Exception("Already exists");
         }
@@ -742,7 +736,6 @@ public function getOpusEncoder(){
      * @NoCSRFRequired
      */
      public function saveTextToOpenNote(){
-         $this->logger->debug('saveTextToOpenNote');
         $id = $_POST['id'];
         $this->waitEndOfExtraction($id);
         $cache = $this->getCacheFolder();
@@ -757,7 +750,7 @@ public function getOpusEncoder(){
             $file = $folder->newFile($mainFile);
         }
         $file->putContent($_POST['html']);
-        
+
         try{
             $file = $folder->get("metadata.json");
         } catch(\OCP\Files\NotFoundException $e) {
@@ -782,7 +775,7 @@ public function getOpusEncoder(){
             $cache->addToCache($path, $meta, $mtime, $text);
 
         }
-        
+
      }
      /*
         returns false if target note is not a folder or mTime if it is
@@ -805,20 +798,19 @@ public function getOpusEncoder(){
                 return false;
             }
         }
-        
+
 
         return false;
      }
 
      private function saveOpenNoteAsDir($inFolder, $files, $path, $id){
-         $this->logger->debug("saveOpenNoteAdDir: {$inFolder}, {$files}, {$path}, {$id}");
          if($this->CarnetFolder->nodeExists($path)){
             $outFolder = $this->CarnetFolder->get($path);
-         } 
+         }
          else {
             $outFolder = $this->CarnetFolder->newFolder($path);
          }
-        
+
 
 
         $meta = array();
@@ -827,8 +819,8 @@ public function getOpusEncoder(){
             if($parent != "/" AND $parent != "" AND $parent != Null AND !empty($parent) AND $parent != "."){
                 if(!$outFolder->nodeExists($parent)){
                     $outFolder->newFolder($parent);
-                   
-                }                
+
+                }
             }
             //nexccloud copy breaks encryption, doing my own function
             try {
@@ -837,8 +829,8 @@ public function getOpusEncoder(){
                 $outFolder->newFile($file);
                 $outFile = $outFolder->get($file);
             }
-            $outFile->putContent($inFolder->get($file)->fopen("r"));         
-        }        
+            $outFile->putContent($inFolder->get($file)->fopen("r"));
+        }
         return $outFolder->getFileInfo()->getMtime();
      }
 
@@ -858,12 +850,12 @@ public function getOpusEncoder(){
                     }
                 }
 
-                
+
                 return $outFolder->getFileInfo()->getMtime();
             }
         } catch(\OCP\Files\NotFoundException $e) {
         }
-        
+
         $this->saveOpenNote($path,$id);
         return false;
      }
@@ -888,7 +880,7 @@ public function getOpusEncoder(){
             array_push($files, "data/preview_".$_GET['media'].".jpg");
         } catch(\OCP\Files\NotFoundException $e) {
         }
-        
+
         $mtime = $this->deleteFiles($folder, $files, $_GET['path'],$id);
         if($mtime !== false){
             //we need to refresh cache
@@ -963,8 +955,8 @@ public function getOpusEncoder(){
                 }
                 $srcFile = file_get_contents($fn);
                 $src = imagecreatefromstring($srcFile);
-                
-               
+
+
                 $dst = imagecreatetruecolor($width,$height);
                 imagecopyresampled($dst,$src,0,0,0,0,$width,$height,$size[0],$size[1]);
                 $exif = exif_read_data($fn, 0, true);
@@ -995,9 +987,9 @@ public function getOpusEncoder(){
             } catch(\Throwable $e){
 
             }
-            
+
         }
-        
+
         $mtime = $this->saveFiles($folder,$files, $_POST['path'],$id);
         if($mtime !== false){
             //we need to refresh cache
@@ -1042,7 +1034,7 @@ public function getOpusEncoder(){
                     array_push($media,"note/open/".$id."/getMedia/".$in->getName());
             }
         } catch(\OCP\Files\NotFoundException $e) {
-            
+
         }
         return $media;
      }
@@ -1066,7 +1058,6 @@ public function getOpusEncoder(){
      }
 
      private function saveOpenNote($path,$id){
-         $this->logger->debug("saveOpenNode: {$path}, {$id}");
         $this->waitEndOfExtraction($id);
         $cache = $this->getCacheFolder();
         $folder = $cache->get("currentnote".$id);
@@ -1091,18 +1082,15 @@ public function getOpusEncoder(){
             if($this->CarnetFolder->nodeExists($path)){
                 try{
                     $oldFile = $this->CarnetFolder->get($path);
-                    $oldFileJson = json_encode($oldFile);
-                    $this->logger->debug("oldFileJson: {$oldFileJson}");
                     $oldFile->delete();
                 } catch(\OCP\Files\NotFoundException $e) {
                 }
             }
-        
+
             $file = $this->CarnetFolder->newFile($path);
 
             $file->putContent($tmph);
-            $newFileJson = json_encode($oldFile);
-            $this->logger->debug("newFileJson: {$newFileJson}");
+
             //I think this new file is missing the share info
 
             // Do not close $tmph, it is closed by putContent, and a log is displayed as
@@ -1114,11 +1102,11 @@ public function getOpusEncoder(){
             $cache = new CacheManager($this->db, $this->CarnetFolder);
             $cache->addToCache($path, $meta, $file->getFileInfo()->getMtime(), $text);
 
-        } else 
+        } else
             throw new Exception('Unable to create Zip');
 
         unlink($tmppath);
-     } 
+     }
      /*
         returns previews
      */
@@ -1147,8 +1135,8 @@ public function getOpusEncoder(){
             }
 
         }
-        
-       
+
+
         return array("previews" => $previews, "media" => $media);
      }
 
@@ -1171,11 +1159,11 @@ public function getOpusEncoder(){
             return;
           sleep(1);
           $i++;
-        }while($i < 30); 
+        }while($i < 30);
         throw new Exception ("timeout");
     }
-    
-     
+
+
      /**
      * @NoAdminRequired
      * @NoCSRFRequired
@@ -1190,7 +1178,7 @@ public function getOpusEncoder(){
             $data["isNew"] = false;
             if($noteNode->getType() === "dir"){
                 if ($noteNode->nodeExists("note.md")){
-                    $data['html'] = $noteNode->get("note.md")->getContent(); 
+                    $data['html'] = $noteNode->get("note.md")->getContent();
                     $data['isMarkdown'] = true;
                 }
                 else {
@@ -1219,7 +1207,7 @@ public function getOpusEncoder(){
         }
 
         $data['id'] = $editUniqueID;
-        return $data; 
+        return $data;
 
      }
 
@@ -1253,7 +1241,7 @@ public function getOpusEncoder(){
         $cache = $this->getCacheFolder();
         /*
             because of an issue with nextcloud, working with a single currentnote folder is impossible...
-        */    
+        */
         foreach($cache->getDirectoryListing() as $in){
             if(substr($in->getName(), 0, strlen("currentnote")) === "currentnote"){
                 try{
@@ -1265,10 +1253,10 @@ public function getOpusEncoder(){
                         try{
                             $in->delete();
                         } catch (\OCP\Lock\LockedException $e2){
-        
+
                         }
                     } catch(\Doctrine\DBAL\Exception\LockWaitTimeoutException $e){
-                        
+
                     }
                 } catch(\Doctrine\DBAL\Exception\LockWaitTimeoutException $e){
                     try{
@@ -1277,18 +1265,18 @@ public function getOpusEncoder(){
                         try{
                             $in->delete();
                         } catch (\OCP\Lock\LockedException $e2){
-        
+
                         }
                     } catch(\Doctrine\DBAL\Exception\LockWaitTimeoutException $e){
-                        
+
                     }
                 }
             }
         }
-        
+
         $noteFolderName = "currentnote".$editUniqueID;
         try{
-            if($this->CarnetFolder->nodeExists($path)){                
+            if($this->CarnetFolder->nodeExists($path)){
                 $noteNode = $this->CarnetFolder->get($path);
                 if($noteNode->getType() === "dir"){
                     //nextcloud copy doesn't work well with encryption, so making my own function
@@ -1306,7 +1294,7 @@ public function getOpusEncoder(){
                     $zipFile->openFile($tmppath);
                     foreach($zipFile as $entryName => $contents){
                         if($entryName === ".extraction_finished")
-                        continue;    
+                        continue;
                         if($contents === "" AND $zipFile->isDirectory($entryName)){
                             $folder->newFolder($entryName);
                         }
@@ -1321,7 +1309,7 @@ public function getOpusEncoder(){
                     unlink($tmppath);
                 }
             }
-            else 
+            else
                 $folder = $cache->newFolder($noteFolderName);
         } catch(\OCP\Files\NotFoundException $e) {
             $folder = $cache->newFolder($noteFolderName);
@@ -1432,7 +1420,7 @@ public function getOpusEncoder(){
      public function setAppTheme($url){
          if(strpos($url, '/') !== 0 && strpos($url, 'http') !==0)
             throw new Exception("forbidden");
-        
+
         $meta = json_decode(file_get_contents($url."/metadata.json"),true);
         $browser = array();
         $editor = array();
@@ -1452,7 +1440,7 @@ public function getOpusEncoder(){
             array_push($settings, $url."/".$css);
         }
         $this->Config->setUserValue($this->userId, $this->appName,"css_settings", json_encode($settings));
-        
+
      }
 
      /**
@@ -1513,7 +1501,7 @@ public function getOpusEncoder(){
                     if(!$zipFile->isDirectory($f))
                         $prefix = Null;
                 }
-                  
+
                 if($i>0){
                     $curprefix = substr($f, 0, $i);
                     if($prefix == "")
@@ -1523,7 +1511,7 @@ public function getOpusEncoder(){
                         break;
                     }
 
-                }   
+                }
             }
             $array = array();
             $keywordsDB = array();
@@ -1532,9 +1520,9 @@ public function getOpusEncoder(){
             $log = array();
             $folderNoteAssociation = array();
             foreach($zipFile->getListFiles() as $f){
-                
+
                 $pos = strpos($f, ".sqd/");
-                if($pos != false){ 
+                if($pos != false){
                     $parent = substr($f, 0, $pos+strlen(".sqd/"));
                     if($parent != $f){
                         if(!array_key_exists($parent,$folderNoteAssociation))
@@ -1553,10 +1541,10 @@ public function getOpusEncoder(){
                     continue;
                 if(endsWith($relativePath, ".sqd/") ){  //folder
                     $newPath = $relativePath;
-                    if($this->CarnetFolder->nodeExists($relativePath)){    
+                    if($this->CarnetFolder->nodeExists($relativePath)){
                         $newPath = substr($relativePath, 0, strlen($relativePath)-5)." ".bin2hex(random_bytes(2)).".sqd/";
                         $renamed[$relativePath] = $newPath;
-                        
+
                     }
                     $this->CarnetFolder->newFolder($newPath);
                     foreach($folderNoteAssociation[$f] as $inNoteFile){
@@ -1575,13 +1563,13 @@ public function getOpusEncoder(){
                     }
 
                 }
-                else if(endsWith($relativePath, ".sqd") ){    
+                else if(endsWith($relativePath, ".sqd") ){
                     $newPath = $relativePath;
-                    if($this->CarnetFolder->nodeExists($relativePath)){    
+                    if($this->CarnetFolder->nodeExists($relativePath)){
                         $newPath = substr($relativePath, 0, strlen($relativePath)-4)." ".bin2hex(random_bytes(2)).".sqd";
-                        
+
                     }
-                    
+
                     if($contents !== "" && $contents !== NULL){
                         $parent = dirname($f);
                         array_push($log, "parent "+$parent);
@@ -1612,12 +1600,12 @@ public function getOpusEncoder(){
                             } else {
                                 $renamed[$relativePath] = $newPath;
                             }
-                            
+
                         }
                     }
                 } else if(startsWith($relativePath, "quickdoc")){
                     array_push($log, "is quickdoc");
-                    
+
 
                     if(startsWith($relativePath, "quickdoc/keywords/")){
 
@@ -1647,14 +1635,14 @@ public function getOpusEncoder(){
                 foreach($renamed as $oldNotePath => $newNotePath){
                     foreach($thisKeywordsDB->data as $item){
                         if($item->path == $oldNotePath){
-                            $item->path = $newNotePath; 
+                            $item->path = $newNotePath;
                         }
                     }
                 }
                 $this->mergeWithMyKeywordsDB($myKeywordsDb, $thisKeywordsDB);
 
             }
-    
+
             foreach($recentDB as $dbPath){
                 array_push($log, "is recent db");
                 $contents = $zipFile[$dbPath];
@@ -1673,9 +1661,9 @@ public function getOpusEncoder(){
                 $res = $this->mergeWithMyRecentDB($myRecentDb, $thisRecentDB);
                 if(!empty($res)){
                     array_push($log, "recent db has changed ".$res);
-                } else 
+                } else
                 array_push($log, "recent db hasn't changed");
-                    
+
             }
             $return = array();
             $return['log'] = $log;
@@ -1705,7 +1693,7 @@ public function getOpusEncoder(){
                     $folder = $this->CarnetFolder->newFolder($path);
                 }
             }
-                
+
             $note = $folder->newFile($_FILES['media']['name'][0]);
             $note->putContent($fileIn);
             $meta = json_decode($metadata);
@@ -1717,7 +1705,7 @@ public function getOpusEncoder(){
                 $kbaction["keyword"] = $keyword;
                 $kbaction["path"] = $notePath;
 
-                array_push($kbactions,$kbaction); 
+                array_push($kbactions,$kbaction);
             }
             $this->internalPostKeywordsActions($kbactions);
             $add_to_recent = $_POST['add_to_recent'];
@@ -1727,7 +1715,7 @@ public function getOpusEncoder(){
                 $dbaction["action"] = "add";
                 $dbaction["time"] = $meta->creation_date;
                 $dbaction["path"] = $notePath;
-                array_push($dbactions,$dbaction); 
+                array_push($dbactions,$dbaction);
                 if($is_pinned == "true"){
                     $dbaction = array();
                     $dbaction["action"] = "pin";
@@ -1735,7 +1723,7 @@ public function getOpusEncoder(){
                     $dbaction["path"] = $notePath;
                     array_push($dbactions,$dbaction);
                 }
-            
+
                 $this->internalPostActions($dbactions);
             }
         }
@@ -1754,7 +1742,7 @@ public function getOpusEncoder(){
         else {
             $r = new DataDisplayResponse($f->getContent());
         }
-        
+
         $r->addHeader("Content-Disposition", "attachment; filename=\"".$f->getName()."\"");
         $r->addHeader("Content-Type", $f->getMimeType());
         return $r;
